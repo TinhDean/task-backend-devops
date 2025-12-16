@@ -1,0 +1,50 @@
+name: CI - Build & Test Backend
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run lint (if exists)
+        run: |
+          if [ -f package.json ] && grep -q "lint" package.json; then
+            npm run lint
+          else
+            echo "No lint script found"
+          fi
+
+      - name: Run tests (if exists)
+        run: |
+          if [ -f package.json ] && grep -q "test" package.json; then
+            npm test
+          else
+            echo "No test script found"
+          fi
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t task-backend:latest .
